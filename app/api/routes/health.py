@@ -1,11 +1,13 @@
 """
 Health check and general API endpoints.
 """
+import os
 import logging
 from datetime import datetime, timezone
 from typing import Optional, Dict
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import FileResponse
 from sqlalchemy import text, select
 from pydantic import BaseModel
 
@@ -68,6 +70,32 @@ async def ready() -> HealthResponse:
         bypass_auth_active=settings.BYPASS_AUTH,
         details=details,
     )
+
+
+# ---------------------------------------------------------------------------
+# Serve Outlook Add-in manifest XML file directly from URL
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/manifest.xml",
+    summary="Serve the Outlook Add-in manifest XML file",
+)
+async def serve_manifest_xml():
+    """
+    Exposes the manifest.xml on the root path with the correct XML MIME-type.
+    This enables seamless 'Add from URL' installations.
+    """
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.abspath(os.path.join(current_dir, "..", "..", ".."))
+    manifest_path = os.path.join(project_root, "outlook-addin", "manifest.xml")
+
+    if not os.path.exists(manifest_path):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Manifest XML file not found.",
+        )
+
+    return FileResponse(manifest_path, media_type="application/xml")
 
 
 # ---------------------------------------------------------------------------
