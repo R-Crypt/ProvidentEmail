@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Provident Operations Copilot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
+    <link rel="stylesheet" href="taskpane.css">
+</head>
+<body>
+
+<div class="app-shell">
+
+    <!-- ── Persistent Header ───────────────────────────────── -->
+    <header class="app-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <div class="logo-area">
+                <img src="assets/logo.jpg" alt="Provident Logo" class="app-logo">
+                <span class="app-title">Provident Copilot</span>
+            </div>
+            <!-- Breadcrumb — updated dynamically by JS -->
+            <nav class="breadcrumb" id="breadcrumb" aria-label="Navigation">
+                <span class="crumb active" id="bc-home">Home</span>
+            </nav>
+        </div>
+        <label style="font-size: 11px; display: flex; align-items: center; gap: 4px; color: var(--ink-2); cursor: pointer; background: var(--bg-2); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-2); white-space: nowrap;">
+            <input type="checkbox" id="add-in-auto-reply-toggle" onchange="toggleAddInAutoReply()" style="width: 12px; height: 12px; cursor: pointer;">
+            Auto-Reply
+        </label>
+    </header>
+
+    <!-- ── Scrollable Body ────────────────────────────────── -->
+    <div class="app-body">
+
+        <!-- ══════════════════════════════════════════════════
+             VIEW 1: HOME
+        ══════════════════════════════════════════════════ -->
+        <div id="view-home" class="view active">
+
+            <p class="section-title">Good morning ☀️</p>
+            <p class="section-sub" id="home-subtitle">Here's your inbox at a glance.</p>
+
+            <!-- Stale alert -->
+            <div class="alert-box hidden" id="alert-stale">
+                <span class="alert-icon">⚠️</span>
+                <span class="alert-text">
+                    <strong class="alert-count" id="stale-num">0</strong> email(s) need attention — no action in 24h+
+                </span>
+            </div>
+
+            <!-- Summary chips -->
+            <div class="stats-strip">
+                <div class="stat-chip">
+                    <span class="stat-val" id="total-today">0</span>
+                    <span class="stat-lbl">Processed today</span>
+                </div>
+                <div class="stat-chip">
+                    <span class="stat-val" id="total-critical">0</span>
+                    <span class="stat-lbl">Critical priority</span>
+                </div>
+            </div>
+
+            <!-- Category cards -->
+            <div class="cat-grid">
+
+                <div class="cat-card" id="card-purchase_order"
+                     onclick="navToCategory('purchase_order')"
+                     aria-label="Purchase Orders">
+                    <div class="cat-icon po">📦</div>
+                    <div class="cat-body">
+                        <div class="cat-name">Purchase Orders</div>
+                        <div class="cat-hint">New POs ready for ERP entry</div>
+                    </div>
+                    <div class="cat-right-meta">
+                        <div class="cat-count" id="cnt-purchase_order">0</div>
+                        <div class="crit-pill" id="crit-purchase_order"></div>
+                    </div>
+                    <span class="cat-arrow">›</span>
+                </div>
+
+                <div class="cat-card" id="card-enquiry"
+                     onclick="navToCategory('enquiry')"
+                     aria-label="Quote Enquiries">
+                    <div class="cat-icon enq">❓</div>
+                    <div class="cat-body">
+                        <div class="cat-name">Quote Enquiries</div>
+                        <div class="cat-hint">RFQ details, pricing & samples</div>
+                    </div>
+                    <div class="cat-right-meta">
+                        <div class="cat-count" id="cnt-enquiry">0</div>
+                        <div class="crit-pill" id="crit-enquiry"></div>
+                    </div>
+                    <span class="cat-arrow">›</span>
+                </div>
+
+                <div class="cat-card" id="card-invoice"
+                     onclick="navToCategory('invoice')"
+                     aria-label="Vendor Invoices">
+                    <div class="cat-icon inv">💰</div>
+                    <div class="cat-body">
+                        <div class="cat-name">Vendor Invoices</div>
+                        <div class="cat-hint">Verify & route to accounts payable</div>
+                    </div>
+                    <div class="cat-right-meta">
+                        <div class="cat-count" id="cnt-invoice">0</div>
+                        <div class="crit-pill" id="crit-invoice"></div>
+                    </div>
+                    <span class="cat-arrow">›</span>
+                </div>
+
+                <div class="cat-card" id="card-shipping"
+                     onclick="navToCategory('shipping')"
+                     aria-label="Shipping & Logistics">
+                    <div class="cat-icon shp">🚚</div>
+                    <div class="cat-body">
+                        <div class="cat-name">Shipping &amp; Logistics</div>
+                        <div class="cat-hint">Track dispatch, ETA &amp; delays</div>
+                    </div>
+                    <div class="cat-right-meta">
+                        <div class="cat-count" id="cnt-shipping">0</div>
+                        <div class="crit-pill" id="crit-shipping"></div>
+                    </div>
+                    <span class="cat-arrow">›</span>
+                </div>
+
+                <div class="cat-card" id="card-general"
+                     onclick="navToCategory('general')"
+                     aria-label="General Operations">
+                    <div class="cat-icon gen">📧</div>
+                    <div class="cat-body">
+                        <div class="cat-name">General Operations</div>
+                        <div class="cat-hint">Internal correspondence &amp; misc</div>
+                    </div>
+                    <div class="cat-right-meta">
+                        <div class="cat-count" id="cnt-general">0</div>
+                        <div class="crit-pill" id="crit-general"></div>
+                    </div>
+                    <span class="cat-arrow">›</span>
+                </div>
+
+            </div><!-- /cat-grid -->
+        </div><!-- /view-home -->
+
+        <!-- ══════════════════════════════════════════════════
+             VIEW 2: CATEGORY LIST
+        ══════════════════════════════════════════════════ -->
+        <div id="view-list" class="view">
+
+            <div class="list-header">
+                <span class="list-title" id="list-title">Emails</span>
+                <span class="list-count" id="list-count"></span>
+            </div>
+
+            <!-- Filter chips -->
+            <div class="filter-row" id="filter-row">
+                <button class="f-chip on"      id="fc-all"      onclick="applyFilter('all')">All</button>
+                <button class="f-chip crit"    id="fc-critical" onclick="applyFilter('critical')">🔴 Critical</button>
+                <button class="f-chip high"    id="fc-high"     onclick="applyFilter('high')">🟠 High</button>
+                <button class="f-chip medium"  id="fc-medium"   onclick="applyFilter('medium')">🟡 Medium</button>
+                <button class="f-chip low"     id="fc-low"      onclick="applyFilter('low')">🟢 Low</button>
+            </div>
+
+            <!-- Shimmer while loading -->
+            <div id="list-loading" class="shimmer-list hidden">
+                <div class="shimmer-row"></div>
+                <div class="shimmer-row"></div>
+                <div class="shimmer-row"></div>
+            </div>
+
+            <!-- Email rows container -->
+            <div class="email-list" id="email-list"></div>
+
+        </div><!-- /view-list -->
+
+        <!-- ══════════════════════════════════════════════════
+             VIEW 3: EMAIL DETAIL
+        ══════════════════════════════════════════════════ -->
+        <div id="view-detail" class="view">
+
+            <!-- Loading spinner -->
+            <div class="spinner-wrap" id="detail-loading">
+                <div class="spinner"></div>
+                <span class="spinner-lbl">Classifying email…</span>
+            </div>
+
+            <!-- Error / empty -->
+            <div class="empty-box hidden" id="detail-error">
+                <div class="empty-icon">📭</div>
+                <p class="empty-msg" id="detail-error-msg">Select an email to classify it.</p>
+            </div>
+
+            <!-- Content — hidden until data loads -->
+            <div id="detail-content" class="hidden">
+
+                <!-- Classification banner -->
+                <div class="class-banner general" id="class-banner">
+                    <div class="class-icon-wrap" id="class-icon">📧</div>
+                    <div class="class-info">
+                        <div class="class-label">AI Classification</div>
+                        <div class="class-name"  id="class-name">—</div>
+                        <div class="class-reason" id="class-reason">—</div>
+                    </div>
+                    <div class="class-conf" id="class-conf">—</div>
+                </div>
+
+                <!-- Priority insight row -->
+                <div class="priority-row low hidden" id="priority-row">
+                    <span class="pr-badge" id="pr-badge">Low</span>
+                    <span class="pr-reasons" id="pr-reasons">—</span>
+                    <span class="pr-score"  id="pr-score">—</span>
+                </div>
+
+                <!-- Workflow stepper + advance button -->
+                <div class="stepper-card hidden" id="stepper-card">
+                    <div class="stepper-label">
+                        <span>Workflow</span>
+                        <span class="current-stage-name" id="current-stage-name"></span>
+                    </div>
+                    <div class="stepper" id="stepper"></div>
+                </div>
+
+                <button class="advance-btn hidden" id="advance-btn"
+                        onclick="advanceStatus()">
+                    Move to Next Stage →
+                </button>
+
+                <div class="divider"></div>
+
+                <!-- Override category -->
+                <div class="override-row">
+                    <span class="override-lbl">Category:</span>
+                    <select id="override-select" class="override-select">
+                        <option value="purchase_order">Purchase Order</option>
+                        <option value="enquiry">Quote Enquiry</option>
+                        <option value="invoice">Vendor Invoice</option>
+                        <option value="shipping">Shipping &amp; Logistics</option>
+                        <option value="general">General</option>
+                    </select>
+                </div>
+
+                <!-- Tab bar -->
+                <div class="tabs-bar">
+                    <button class="tab-pill on" id="tab-btn-triage"  onclick="switchTab('triage')">Email Summary</button>
+                    <button class="tab-pill"    id="tab-btn-pricing" onclick="switchTab('pricing')">Pricing</button>
+                    <button class="tab-pill"    id="tab-btn-reply"   onclick="switchTab('reply')">Smart Reply</button>
+                </div>
+
+                <!-- TAB: Email Summary -->
+                <div class="tab-panel on" id="tab-triage">
+                    <div class="tab-section">
+                        <div class="tab-section-title">AI Email Summary</div>
+                        <div id="email-summary-text" style="font-size: 13px; line-height: 1.5; color: var(--ink-2); margin-bottom: 12px; font-family: Segoe UI, sans-serif; white-space: pre-wrap;"></div>
+                    </div>
+                    <div class="tab-section">
+                        <div class="tab-section-title">Extracted Details</div>
+                        <div class="fields-list" id="fields-list"></div>
+                    </div>
+                </div>
+
+                <!-- TAB: Pricing Calculator -->
+                <div class="tab-panel" id="tab-pricing">
+                    <div id="calc-panel">
+                        <div class="calc-grid" id="calc-grid">
+                            <div class="calc-row">
+                                <label for="calc-type">Item Type</label>
+                                <select id="calc-type">
+                                    <option value="3ply">3-Ply Corrugated Box</option>
+                                    <option value="5ply">5-Ply Corrugated Box</option>
+                                    <option value="7ply">7-Ply Corrugated Box</option>
+                                    <option value="duplex">Duplex Printed Carton</option>
+                                </select>
+                            </div>
+                            <div class="calc-row">
+                                <label for="calc-qty">Quantity</label>
+                                <input type="number" id="calc-qty" value="1000" min="100">
+                            </div>
+                            <div class="calc-row">
+                                <label for="calc-l">Length (mm)</label>
+                                <input type="number" id="calc-l" value="300" min="50">
+                            </div>
+                            <div class="calc-row">
+                                <label for="calc-w">Width (mm)</label>
+                                <input type="number" id="calc-w" value="200" min="50">
+                            </div>
+                            <div class="calc-row">
+                                <label for="calc-h">Height (mm)</label>
+                                <input type="number" id="calc-h" value="200" min="50">
+                            </div>
+                            <div class="calc-row">
+                                <label for="calc-print">Printing</label>
+                                <select id="calc-print">
+                                    <option value="none">No Print</option>
+                                    <option value="1color">1-Color Flexo</option>
+                                    <option value="2color">2-Color Flexo</option>
+                                    <option value="multi">Offset Multicolor</option>
+                                </select>
+                            </div>
+                            <div class="calc-result">
+                                <span class="calc-lbl">Estimated Price</span>
+                                <span class="calc-val" id="calc-result">$0.00</span>
+                            </div>
+                            <button class="calc-insert-btn" id="calc-insert">
+                                📋 Insert Price into Draft Reply
+                            </button>
+                        </div>
+                    </div>
+                    <div class="empty-box hidden" id="calc-empty">
+                        <div class="empty-icon">🧮</div>
+                        <p class="empty-msg">Pricing calculator is only available for Quote Enquiries.</p>
+                    </div>
+                </div>
+
+                <!-- TAB: Smart Reply -->
+                <div class="tab-panel" id="tab-reply">
+                    <div class="tab-section">
+                        <div class="tab-section-title">AI Draft Reply</div>
+                        <textarea class="draft-area" id="draft-box"
+                                  spellcheck="false"
+                                  placeholder="AI generating draft…"></textarea>
+                        <div style="display: flex; gap: 8px; margin-top: 8px;">
+                            <button class="copy-draft-btn" id="copy-draft" style="flex: 1; margin-top: 0; padding: 6px 8px; font-size: 11px;">
+                                📋 Copy Draft
+                            </button>
+                            <button class="copy-draft-btn" id="send-reply" onclick="sendAddInReply()" style="flex: 1; margin-top: 0; padding: 6px 8px; font-size: 11px; background-color: #107c41 !important;">
+                                ✉ Send Reply
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /detail-content -->
+        </div><!-- /view-detail -->
+
+    </div><!-- /app-body -->
+</div><!-- /app-shell -->
+
+<!-- Toast container (portal) -->
+<div class="toast-container" id="toast-container"></div>
+
+<script type="text/javascript" src="taskpane.js"></script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+# ============================================================
+# Production Docker Compose
+# Services: nginx (reverse proxy) + api (FastAPI) + postgres (database)
+# ============================================================
+
+version: "3.9"
+
+services:
+
+  # ----------------------------------------------------------
+  # PostgreSQL — persistent database
+  # ----------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: provident_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-provident}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-provident_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-provident_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-provident} -d ${POSTGRES_DB:-provident_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
+  # ----------------------------------------------------------
+  # FastAPI application
+  # ----------------------------------------------------------
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: provident_api
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      # Override DATABASE_URL to point at the postgres container
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-provident}:${POSTGRES_PASSWORD:-provident_secret}@postgres:5432/${POSTGRES_DB:-provident_db}
+      ENVIRONMENT: production
+      DEBUG: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - internal
+      - external
+    # Don't expose 8000 directly — Nginx is the public entry point
+
+  # ----------------------------------------------------------
+  # Nginx — reverse proxy + SSL termination + static files
+  # ----------------------------------------------------------
+  nginx:
+    build:
+      context: ..
+      dockerfile: nginx/Dockerfile
+    container_name: provident_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Mount the actual SSL certs directory (from Let's Encrypt / Certbot)
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ../outlook-addin:/usr/share/nginx/addin:ro
+    depends_on:
+      - api
+    networks:
+      - external
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  internal:
+    driver: bridge
+  external:
+    driver: bridge

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp
+  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xsi:type="MailApp">
+
+  <Id>b205cb36-54be-419b-a5b8-569df9e38d72</Id>
+  <Version>1.0.7.0</Version>
+  <ProviderName>Provident Packaging</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Provident Operations Copilot" />
+  <Description DefaultValue="AI email triaging and operations copilot for Provident Packaging." />
+  <IconUrl DefaultValue="https://localhost:7071/addin/assets/logo.jpg" />
+  <HighResolutionIconUrl DefaultValue="https://localhost:7071/addin/assets/logo.jpg" />
+  <SupportUrl DefaultValue="https://providentpackaging.com/" />
+
+  <AppDomains>
+    <AppDomain>https://localhost:7071</AppDomain>
+  </AppDomains>
+
+  <Hosts>
+    <Host Name="Mailbox" />
+  </Hosts>
+
+  <Requirements>
+    <Sets>
+      <Set Name="Mailbox" MinVersion="1.1" />
+    </Sets>
+  </Requirements>
+
+  <FormSettings>
+    <Form xsi:type="ItemRead">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="https://localhost:7071/addin/taskpane.html" />
+        <RequestedHeight>250</RequestedHeight>
+      </DesktopSettings>
+    </Form>
+  </FormSettings>
+
+  <Permissions>ReadItem</Permissions>
+
+  <Rule xsi:type="RuleCollection" Mode="Or">
+    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read" />
+  </Rule>
+
+  <DisableEntityHighlighting>false</DisableEntityHighlighting>
+
+  <!--
+    VersionOverrides V1_0 (for older Outlook clients that don't support V1_1)
+    Note: Newer Outlook clients (16.x+) will prefer V1_1 nested inside.
+  -->
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
+
+    <Requirements>
+      <bt:Sets>
+        <bt:Set Name="Mailbox" MinVersion="1.3" />
+      </bt:Sets>
+    </Requirements>
+
+    <Hosts>
+      <Host xsi:type="MailHost">
+        <DesktopFormFactor>
+          <FunctionFile resid="functionFileUrl" />
+          <ExtensionPoint xsi:type="MessageReadCommandSurface">
+            <OfficeTab id="TabDefault">
+              <Group id="groupProvident">
+                <Label resid="groupLabel" />
+                <Control xsi:type="Button" id="btnOpenCopilot">
+                  <Label resid="buttonLabel" />
+                  <Supertip>
+                    <Title resid="buttonTitle" />
+                    <Description resid="buttonDescription" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="icon16" />
+                    <bt:Image size="32" resid="icon32" />
+                    <bt:Image size="80" resid="icon80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <SourceLocation resid="taskpaneUrl" />
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+
+    <Resources>
+      <bt:Images>
+        <bt:Image id="icon16" DefaultValue="https://localhost:7071/addin/assets/logo.jpg" />
+        <bt:Image id="icon32" DefaultValue="https://localhost:7071/addin/assets/logo.jpg" />
+        <bt:Image id="icon80" DefaultValue="https://localhost:7071/addin/assets/logo.jpg" />
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="functionFileUrl" DefaultValue="https://localhost:7071/addin/functionfile.html" />
+        <bt:Url id="taskpaneUrl" DefaultValue="https://localhost:7071/addin/taskpane.html" />
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="groupLabel" DefaultValue="Provident" />
+        <bt:String id="buttonLabel" DefaultValue="Copilot" />
+        <bt:String id="buttonTitle" DefaultValue="Operations Copilot" />
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="buttonDescription" DefaultValue="Open the Provident AI Operations Copilot for email triaging, pricing, and draft responses." />
+      </bt:LongStrings>
+    </Resources>
+
+    <!--
+      VersionOverrides V1_1 — used by Outlook 16.x (New Outlook for Mac).
+      V1_1 uses MailHost instead of Mailbox as the Host xsi:type.
+    -->
+    <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides/1.1" xsi:type="VersionOverridesV1_1">
+
+      <Requirements>
+        <bt:Sets>
+          <bt:Set Name="Mailbox" MinVersion="1.3" />
+        </bt:Sets>
+      </Requirements>
+
+      <Hosts>
+        <Host xsi:type="MailHost">
+          <DesktopFormFactor>
+            <FunctionFile resid="functionFileUrl" />
+            <ExtensionPoint xsi:type="MessageReadCommandSurface">
+              <OfficeTab id="TabDefault">
+                <Group id="groupProvident">
+                  <Label resid="groupLabel" />
+                  <Control xsi:type="Button" id="btnOpenCopilot">
+                    <Label resid="buttonLabel" />
+                    <Supertip>
+                      <Title resid="buttonTitle" />
+                      <Description resid="buttonDescription" />
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="icon16" />
+                      <bt:Image size="32" resid="icon32" />
+                      <bt:Image size="80" resid="icon80" />
+                    </Icon>
+                    <Action xsi:type="ShowTaskpane">
+                      <SourceLocation resid="taskpaneUrl" />
+                    </Action>
+                  </Control>
+                </Group>
+              </OfficeTab>
+            </ExtensionPoint>
+          </DesktopFormFactor>
+        </Host>
+      </Hosts>
+
+      <Resources>
+        <bt:Images>
+          <bt:Image id="icon16" DefaultValue="https://localhost:7071/addin/assets/logo.jpg" />
+          <bt:Image id="icon32" DefaultValue="https://localhost:7071/addin/assets/logo.jpg" />
+          <bt:Image id="icon80" DefaultValue="https://localhost:7071/addin/assets/logo.jpg" />
+        </bt:Images>
+        <bt:Urls>
+          <bt:Url id="functionFileUrl" DefaultValue="https://localhost:7071/addin/functionfile.html" />
+          <bt:Url id="taskpaneUrl" DefaultValue="https://localhost:7071/addin/taskpane.html" />
+        </bt:Urls>
+        <bt:ShortStrings>
+          <bt:String id="groupLabel" DefaultValue="Provident" />
+          <bt:String id="buttonLabel" DefaultValue="Copilot" />
+          <bt:String id="buttonTitle" DefaultValue="Operations Copilot" />
+        </bt:ShortStrings>
+        <bt:LongStrings>
+          <bt:String id="buttonDescription" DefaultValue="Open the Provident AI Operations Copilot for email triaging, pricing, and draft responses." />
+        </bt:LongStrings>
+      </Resources>
+
+    </VersionOverrides>
+  </VersionOverrides>
+</OfficeApp>

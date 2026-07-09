@@ -1,0 +1,36 @@
+# ============================================================
+# Development Docker Compose Overrides
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+# ============================================================
+
+version: "3.9"
+
+services:
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: builder       # Use the build stage for dev (has all tools)
+    command: >
+      uvicorn app.main:app
+        --host 0.0.0.0
+        --port 8000
+        --reload
+        --log-level debug
+    volumes:
+      # Mount source code for hot-reload without rebuilding
+      - ../app:/app/app
+      - ../outlook-addin:/app/outlook-addin
+    ports:
+      - "8000:8000"   # Expose directly in dev (no Nginx)
+    environment:
+      ENVIRONMENT: development
+      DEBUG: "true"
+      LOG_LEVEL: DEBUG
+      # Use SQLite for zero-setup local dev (change to Postgres if you prefer)
+      DATABASE_URL: sqlite+aiosqlite:///./dev_data/provident_dev.db
+
+  # Disable nginx in dev — access API directly on port 8000
+  nginx:
+    profiles: ["production-only"]   # Won't start unless explicitly requested

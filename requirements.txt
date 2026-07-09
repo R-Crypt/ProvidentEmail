@@ -1,0 +1,50 @@
+# ============================================================
+# Provident Operations Copilot — Production Dependencies
+# ============================================================
+
+# Web Framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+gunicorn==23.0.0
+
+# ASGI + Server
+httptools==0.6.4
+websockets==14.1
+
+# Pydantic + Settings
+pydantic==2.10.3
+pydantic-settings==2.7.0
+
+# Async Database
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0           # PostgreSQL async driver (production)
+aiosqlite==0.20.0         # SQLite async driver (dev only)
+
+# Database migrations
+alembic==1.14.0
+
+# Microsoft Graph API
+httpx==0.28.1             # Async HTTP client (replaces requests)
+
+# OpenAI
+openai==2.44.0            # Includes AsyncOpenAI
+
+# Security / JWT
+python-jose[cryptography]==3.3.0
+
+# Scheduling
+apscheduler==3.10.4
+
+# Configuration
+python-dotenv==1.0.1
+
+# Error tracking
+sentry-sdk[fastapi]==2.19.2
+
+# Utilities
+python-multipart==0.0.20  # Required for FastAPI form data
+
+# Testing (dev only — install with: pip install -r requirements-dev.txt)
+# pytest==8.3.4
+# pytest-asyncio==0.24.0
+# httpx==0.28.1  (already above, shared)

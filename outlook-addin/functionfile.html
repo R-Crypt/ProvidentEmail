@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <script src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    Office.onReady(function() {
+      // Ribbon command functions will be registered here
+    });
+
+    // Command handler to open or log action when ribbon buttons are clicked
+    function openCopilotPane(event) {
+      // Actions to perform when the button is clicked can be written here.
+      // Note: Since this is a ShowTaskpane action button, Outlook handles the pane opening,
+      // but a FunctionFile handler is still required by the manifest schema validation.
+      event.completed();
+    }
+  </script>
+</head>
+<body>
+</body>
+</html>
