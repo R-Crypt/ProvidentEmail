@@ -32,6 +32,7 @@ engine = create_async_engine(
     max_overflow=settings.DB_MAX_OVERFLOW,
     echo=settings.DEBUG,          # Log SQL queries only in debug mode
     pool_pre_ping=True,           # Verify connections before use (handles Postgres restarts)
+    prepared_statement_cache_size=0, # Required for Supabase PgBouncer (Transaction mode)
 )
 
 # Session factory — produces AsyncSession instances
