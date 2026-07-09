@@ -11,12 +11,12 @@
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Provident Operations Copilot" />
   <Description DefaultValue="AI email triaging and operations copilot for Provident Packaging." />
-  <IconUrl DefaultValue="https://localhost:7071/addin/assets/logo.jpg" />
-  <HighResolutionIconUrl DefaultValue="https://localhost:7071/addin/assets/logo.jpg" />
+  <IconUrl DefaultValue="https://providentemail.onrender.com/addin/assets/logo.jpg" />
+  <HighResolutionIconUrl DefaultValue="https://providentemail.onrender.com/addin/assets/logo.jpg" />
   <SupportUrl DefaultValue="https://providentpackaging.com/" />
 
   <AppDomains>
-    <AppDomain>https://localhost:7071</AppDomain>
+    <AppDomain>https://providentemail.onrender.com</AppDomain>
   </AppDomains>
 
   <Hosts>
@@ -32,7 +32,7 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://localhost:7071/addin/taskpane.html" />
+        <SourceLocation DefaultValue="https://providentemail.onrender.com/addin/taskpane.html" />
         <RequestedHeight>250</RequestedHeight>
       </DesktopSettings>
     </Form>
@@ -90,13 +90,13 @@
 
     <Resources>
       <bt:Images>
-        <bt:Image id="icon16" DefaultValue="https://localhost:7071/addin/assets/logo.jpg" />
-        <bt:Image id="icon32" DefaultValue="https://localhost:7071/addin/assets/logo.jpg" />
-        <bt:Image id="icon80" DefaultValue="https://localhost:7071/addin/assets/logo.jpg" />
+        <bt:Image id="icon16" DefaultValue="https://providentemail.onrender.com/addin/assets/logo.jpg" />
+        <bt:Image id="icon32" DefaultValue="https://providentemail.onrender.com/addin/assets/logo.jpg" />
+        <bt:Image id="icon80" DefaultValue="https://providentemail.onrender.com/addin/assets/logo.jpg" />
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="functionFileUrl" DefaultValue="https://localhost:7071/addin/functionfile.html" />
-        <bt:Url id="taskpaneUrl" DefaultValue="https://localhost:7071/addin/taskpane.html" />
+        <bt:Url id="functionFileUrl" DefaultValue="https://providentemail.onrender.com/addin/functionfile.html" />
+        <bt:Url id="taskpaneUrl" DefaultValue="https://providentemail.onrender.com/addin/taskpane.html" />
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="groupLabel" DefaultValue="Provident" />
@@ -152,13 +152,13 @@
 
       <Resources>
         <bt:Images>
-          <bt:Image id="icon16" DefaultValue="https://localhost:7071/addin/assets/logo.jpg" />
-          <bt:Image id="icon32" DefaultValue="https://localhost:7071/addin/assets/logo.jpg" />
-          <bt:Image id="icon80" DefaultValue="https://localhost:7071/addin/assets/logo.jpg" />
+          <bt:Image id="icon16" DefaultValue="https://providentemail.onrender.com/addin/assets/logo.jpg" />
+          <bt:Image id="icon32" DefaultValue="https://providentemail.onrender.com/addin/assets/logo.jpg" />
+          <bt:Image id="icon80" DefaultValue="https://providentemail.onrender.com/addin/assets/logo.jpg" />
         </bt:Images>
         <bt:Urls>
-          <bt:Url id="functionFileUrl" DefaultValue="https://localhost:7071/addin/functionfile.html" />
-          <bt:Url id="taskpaneUrl" DefaultValue="https://localhost:7071/addin/taskpane.html" />
+          <bt:Url id="functionFileUrl" DefaultValue="https://providentemail.onrender.com/addin/functionfile.html" />
+          <bt:Url id="taskpaneUrl" DefaultValue="https://providentemail.onrender.com/addin/taskpane.html" />
         </bt:Urls>
         <bt:ShortStrings>
           <bt:String id="groupLabel" DefaultValue="Provident" />
