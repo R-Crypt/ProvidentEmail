@@ -129,6 +129,12 @@ class Settings(BaseSettings):
                 "color": "preset4",
                 "description": "Meetings, internal emails, general correspondence",
             },
+            "junk": {
+                "outlook_category": "Junk",
+                "display_name": "Junk Email",
+                "color": "preset5",
+                "description": "Spam, marketing, newsletters, or irrelevant emails",
+            },
         }
 
     def validate_required(self) -> list[str]:

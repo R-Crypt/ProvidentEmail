@@ -122,7 +122,7 @@ class GraphClient:
             "$filter": f"isRead eq false and receivedDateTime ge {since_str}",
             "$select": (
                 "id,subject,bodyPreview,body,from,toRecipients,"
-                "receivedDateTime,isRead,categories,hasAttachments"
+                "receivedDateTime,isRead,categories,hasAttachments,conversationId"
             ),
             "$top": settings.EMAILS_PER_BATCH,
             "$orderby": "receivedDateTime desc",

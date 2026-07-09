@@ -5,6 +5,7 @@ All routes require a valid Bearer token (Microsoft SSO or internal JWT).
 """
 import logging
 from datetime import datetime, timezone
+from typing import Optional, List
 
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import func, select
@@ -61,7 +62,15 @@ async def addin_classify(
             body=body.body,
             sender=body.sender,
             user_email=user.email,  # Derived from token — no hardcoding
+            conversation_id=body.conversation_id,
+            source_folder=body.source_folder,
         )
+
+        lifecycle_info = None
+        conv_id = body.conversation_id or result.get("conversation_id")
+        if conv_id:
+            from app.services.email_processor import get_thread_lifecycle_status
+            lifecycle_info = await get_thread_lifecycle_status(db, conv_id)
 
         return ClassifyResponse(
             message_id=result["message_id"],
@@ -72,6 +81,7 @@ async def addin_classify(
             response_draft=result.get("response_draft"),
             processed_at=result.get("processed_at"),
             from_cache=from_cache,
+            thread_lifecycle=lifecycle_info,
         )
 
     except Exception as exc:
@@ -201,14 +211,36 @@ async def addin_category_emails(
     db: DbSession,
     user: AuthUser,
     limit: int = 50,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
 ) -> EmailListResponse:
-    """Return the most recent emails classified under a given category for this user."""
-    valid = {"purchase_order", "enquiry", "invoice", "shipping", "general"}
+    """Return the most recent emails classified under a given category for this user, optionally filtered by datetime range."""
+    valid = {"purchase_order", "enquiry", "invoice", "shipping", "general", "junk"}
     if category not in valid:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"Invalid category. Must be one of: {', '.join(sorted(valid))}",
         )
+
+    start_dt = None
+    if start_date:
+        try:
+            start_dt = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid start_date format. Must be ISO 8601.",
+            )
+
+    end_dt = None
+    if end_date:
+        try:
+            end_dt = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid end_date format. Must be ISO 8601.",
+            )
 
     stmt = (
         select(ProcessedEmail)
@@ -216,9 +248,14 @@ async def addin_category_emails(
             ProcessedEmail.category == category,
             ProcessedEmail.user_email == user.email,
         )
-        .order_by(ProcessedEmail.processed_at.desc())
-        .limit(limit)
     )
+
+    if start_dt:
+        stmt = stmt.where(ProcessedEmail.received_at >= start_dt)
+    if end_dt:
+        stmt = stmt.where(ProcessedEmail.received_at <= end_dt)
+
+    stmt = stmt.order_by(ProcessedEmail.processed_at.desc()).limit(limit)
     result = await db.execute(stmt)
     emails = result.scalars().all()
 

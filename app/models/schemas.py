@@ -34,11 +34,29 @@ class ClassifyRequest(BaseModel):
     subject: str = Field(default="", max_length=2000)
     body: str = Field(default="", max_length=50_000)
     sender: str = Field(default="", max_length=512)
+    conversation_id: Optional[str] = Field(default=None, max_length=512)
+    source_folder: Optional[str] = Field(default=None, max_length=128)
 
     @field_validator("message_id")
     @classmethod
     def strip_message_id(cls, v: str) -> str:
         return v.strip()
+
+
+class ThreadMilestone(BaseModel):
+    label: str
+    timestamp: datetime
+    category: str
+
+
+class ThreadLifecycleInfo(BaseModel):
+    conversation_id: str
+    has_enquiry: bool = False
+    has_order: bool = False
+    has_invoice: bool = False
+    has_shipping: bool = False
+    current_stage: str = "general"
+    milestones: List[ThreadMilestone] = []
 
 
 class ClassifyResponse(BaseModel):
@@ -50,6 +68,7 @@ class ClassifyResponse(BaseModel):
     response_draft: Optional[str] = None
     processed_at: Optional[datetime] = None
     from_cache: bool = False
+    thread_lifecycle: Optional[ThreadLifecycleInfo] = None
 
 
 # ---------------------------------------------------------------------------
@@ -63,7 +82,7 @@ class ReclassifyRequest(BaseModel):
     @field_validator("category")
     @classmethod
     def validate_category(cls, v: str) -> str:
-        valid = {"purchase_order", "enquiry", "invoice", "shipping", "general"}
+        valid = {"purchase_order", "enquiry", "invoice", "shipping", "general", "junk"}
         if v not in valid:
             raise ValueError(f"Category must be one of: {', '.join(sorted(valid))}")
         return v
@@ -85,6 +104,7 @@ class CategoryCounts(BaseModel):
     invoice: int = 0
     shipping: int = 0
     general: int = 0
+    junk: int = 0
 
 
 class TriageSummaryResponse(BaseModel):

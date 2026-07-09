@@ -34,6 +34,8 @@ async def classify_and_save(
     user_email: str,
     received_at: Optional[datetime] = None,
     body_preview: str = "",
+    conversation_id: Optional[str] = None,
+    source_folder: Optional[str] = None,
 ) -> Dict:
     """
     Classify an email with the AI and persist the result to the database.
@@ -51,9 +53,10 @@ async def classify_and_save(
     initial_status_map = {
         "purchase_order": "po_received",
         "enquiry":        "enq_new",
-        "invoice":        "inv_new",
+        "invoice":        "inv_received",
         "shipping":       "ship_dispatched",
         "general":        "gen_new",
+        "junk":           "junk_new",
     }
     initial_status = initial_status_map.get(category, "gen_new")
 
@@ -82,11 +85,11 @@ async def classify_and_save(
         extracted_data=result.get("extracted_data"),
         response_draft=result.get("response_draft"),
         # v2.1 fields
-        conversation_id=result.get("conversation_id") or "",
+        conversation_id=conversation_id or result.get("conversation_id") or "",
         email_status=initial_status,
         status_updated_at=datetime.now(timezone.utc),
         estimated_value=result.get("estimated_value", 0.0),
-        source_folder="Inbox",
+        source_folder=source_folder or "Inbox",
         priority_score=p_info["score"],
         priority_tier=p_info["tier"],
         reply_sent=False,
@@ -121,6 +124,8 @@ async def get_or_classify(
     body: str,
     sender: str,
     user_email: str,
+    conversation_id: Optional[str] = None,
+    source_folder: Optional[str] = None,
 ) -> tuple[Dict, bool]:
     """
     Check the DB cache first; only call the AI if the email hasn't been classified yet.
@@ -149,6 +154,8 @@ async def get_or_classify(
         body=body,
         sender=sender,
         user_email=user_email,
+        conversation_id=conversation_id,
+        source_folder=source_folder,
     )
     return data, False
 
@@ -228,6 +235,8 @@ async def run_email_batch(db: AsyncSession) -> Dict:
                         user_email=user_email,
                         received_at=received_at,
                         body_preview=body_preview,
+                        conversation_id=email.get("conversationId"),
+                        source_folder="Inbox",
                     )
 
                     category = result["category"]
@@ -334,3 +343,72 @@ def _parse_datetime(dt_str: Optional[str]) -> datetime:
         return datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
     except (ValueError, AttributeError):
         return datetime.now(timezone.utc)
+
+
+async def get_thread_lifecycle_status(db: AsyncSession, conversation_id: str) -> Optional[Dict]:
+    if not conversation_id:
+        return None
+
+    # Query all emails in the same conversation thread sorted by received_at ascending
+    stmt = (
+        select(ProcessedEmail)
+        .where(ProcessedEmail.conversation_id == conversation_id)
+        .order_by(ProcessedEmail.received_at.asc())
+    )
+    result = await db.execute(stmt)
+    thread_emails = result.scalars().all()
+
+    if not thread_emails:
+        return None
+
+    # Map categories present in the thread
+    has_enquiry = any(e.category == "enquiry" for e in thread_emails)
+    has_order = any(e.category == "purchase_order" for e in thread_emails)
+    has_invoice = any(e.category == "invoice" for e in thread_emails)
+    has_shipping = any(e.category == "shipping" for e in thread_emails)
+
+    # Determine current lifecycle stage (highest stage reached)
+    current_stage = "general"
+    if has_shipping:
+        current_stage = "shipping"
+    elif has_invoice:
+        current_stage = "invoice"
+    elif has_order:
+        current_stage = "purchase_order"
+    elif has_enquiry:
+        current_stage = "enquiry"
+
+    # Build milestones representing automatic progressions/transitions
+    milestones = []
+    seen_categories = set()
+    
+    # Chronological milestones
+    for e in thread_emails:
+        if e.category in ["enquiry", "purchase_order", "invoice", "shipping"]:
+            if e.category not in seen_categories:
+                seen_categories.add(e.category)
+                
+                # Create a readable progress label
+                label = "Enquiry Received"
+                if e.category == "purchase_order":
+                    label = "Enquiry progressed to Order" if "enquiry" in seen_categories else "Order Placed"
+                elif e.category == "invoice":
+                    label = "Order progressed to Invoice" if "purchase_order" in seen_categories else "Invoice Received"
+                elif e.category == "shipping":
+                    label = "Invoice progressed to Shipment" if "invoice" in seen_categories else "Shipped"
+
+                milestones.append({
+                    "label": label,
+                    "timestamp": e.received_at,
+                    "category": e.category
+                })
+
+    return {
+        "conversation_id": conversation_id,
+        "has_enquiry": has_enquiry,
+        "has_order": has_order,
+        "has_invoice": has_invoice,
+        "has_shipping": has_shipping,
+        "current_stage": current_stage,
+        "milestones": milestones,
+    }

@@ -50,6 +50,13 @@ STATUS_FLOWS = {
         {"id": "gen_new",  "label": "New",         "color": "#6b7280"},
         {"id": "gen_read", "label": "Acknowledged","color": "#10b981"},
     ],
+    "junk": [
+        {"id": "junk_new",      "label": "New Junk",       "color": "#6b7280"},
+        {"id": "junk_review",   "label": "Under Review",   "color": "#3b82f6"},
+        {"id": "junk_flagged",  "label": "Flagged",        "color": "#eab308"},
+        {"id": "junk_archived", "label": "Archived",       "color": "#10b981"},
+        {"id": "junk_deleted",  "label": "Deleted",        "color": "#ef4444"},
+    ],
 }
 
 # Default starting status for each category
@@ -59,6 +66,7 @@ INITIAL_STATUS = {
     "invoice":        "inv_received",
     "shipping":       "ship_dispatched",
     "general":        "gen_new",
+    "junk":           "junk_new",
 }
 
 # Next status in the normal (non-terminal) flow
@@ -88,6 +96,12 @@ NEXT_STATUS = {
 
     "gen_new":  "gen_read",
     # terminal: gen_read
+
+    "junk_new":     "junk_review",
+    "junk_review":   "junk_flagged",
+    "junk_flagged":  "junk_archived",
+    "junk_archived": "junk_deleted",
+    # terminal: junk_deleted
 }
 
 # Status IDs that indicate a reply has been sent / work done on the thread
@@ -95,6 +109,7 @@ REPLY_ADVANCE_STATUS = {
     "purchase_order": "po_acknowledged",
     "enquiry":        "enq_quoted",
     "invoice":        "inv_review",
+    "junk":           "junk_review",
     "shipping":       "ship_delivered",
     "general":        "gen_read",
 }

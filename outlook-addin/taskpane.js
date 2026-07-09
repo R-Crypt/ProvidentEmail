@@ -51,6 +51,7 @@ const CAT = {
     invoice:        { name: 'Vendor Invoice',       icon: '💰', cls: 'invoice' },
     shipping:       { name: 'Shipping & Logistics', icon: '🚚', cls: 'shipping' },
     general:        { name: 'General Operations',   icon: '📧', cls: 'general' },
+    junk:           { name: 'Junk Email',           icon: '🗑️', cls: 'junk' },
 };
 const PRIORITY_LABEL = { critical: '🔴 Critical', high: '🟠 High', medium: '🟡 Medium', low: '🟢 Low' };
 
@@ -184,7 +185,20 @@ function navToCategory(cat) {
 
 async function loadCategoryEmails(cat) {
     try {
-        const res = await apiFetch(`${API_HOST}/api/addin/category_emails?category=${cat}`);
+        const startVal = el('filter-start').value;
+        const endVal = el('filter-end').value;
+        
+        let url = `${API_HOST}/api/addin/category_emails?category=${cat}`;
+        if (startVal) {
+            const startIso = new Date(startVal).toISOString();
+            url += `&start_date=${encodeURIComponent(startIso)}`;
+        }
+        if (endVal) {
+            const endIso = new Date(endVal).toISOString();
+            url += `&end_date=${encodeURIComponent(endIso)}`;
+        }
+
+        const res = await apiFetch(url);
         el('list-loading').classList.add('hidden');
         if (!res?.ok) { renderListEmpty('Failed to load emails.'); return; }
         const d = await res.json();
@@ -194,6 +208,24 @@ async function loadCategoryEmails(cat) {
         el('list-loading').classList.add('hidden');
         renderListEmpty('Cannot reach server. Is it running?');
     }
+}
+
+function onDateFilterChange() {
+    if (_currentCat) {
+        el('list-loading').classList.remove('hidden');
+        el('email-list').innerHTML = '';
+        loadCategoryEmails(_currentCat);
+    }
+}
+
+function clearDateFilters() {
+    el('filter-start').value = '';
+    el('filter-end').value = '';
+    onDateFilterChange();
+}
+
+function renderEmailListEmpty(msg) {
+    el('email-list').innerHTML = `<div class="empty-box"><p class="empty-msg">${esc(msg)}</p></div>`;
 }
 
 function applyFilter(tier) {
@@ -348,6 +380,9 @@ function renderDetail(data) {
     // ── Status stepper
     renderStepper(cat, data.email_status);
 
+    // ── Thread Lifecycle Tracker
+    renderThreadLifecycle(data.thread_lifecycle);
+
     // ── Override selector
     el('override-select').value = cat;
 
@@ -447,6 +482,78 @@ function renderStepper(cat, currentStatus) {
         btn.classList.remove('hidden');
     } else {
         btn.classList.add('hidden');
+    }
+}
+
+function renderThreadLifecycle(info) {
+    const card = el('thread-lifecycle-card');
+    if (!info || !info.conversation_id) {
+        card.classList.add('hidden');
+        return;
+    }
+    card.classList.remove('hidden');
+
+    const stepper = el('thread-lifecycle-stepper');
+    const milestonesEl = el('thread-lifecycle-milestones');
+    stepper.innerHTML = '';
+    milestonesEl.innerHTML = '';
+
+    const stages = [
+        { key: 'enquiry', label: 'Enquiry', icon: '❓', check: info.has_enquiry },
+        { key: 'purchase_order', label: 'Order', icon: '📦', check: info.has_order },
+        { id: 'invoice', key: 'invoice', label: 'Invoice', icon: '💰', check: info.has_invoice },
+        { key: 'shipping', label: 'Shipment', icon: '🚚', check: info.has_shipping }
+    ];
+
+    stages.forEach((stage, i) => {
+        const node = document.createElement('div');
+        node.className = 'step';
+        
+        let stateCls = '';
+        if (stage.check) {
+            stateCls = 'done';
+            if (info.current_stage === stage.key) {
+                stateCls = 'active';
+            }
+        }
+        if (stateCls) node.classList.add(stateCls);
+
+        node.innerHTML = `
+            <div class="step-node">${stage.check ? '✓' : stage.icon}</div>
+            <div class="step-lbl" style="font-size: 9px; margin-top: 4px; font-weight: 600;">${esc(stage.label)}</div>
+        `;
+        stepper.appendChild(node);
+    });
+
+    // Populate milestones list
+    const milestones = info.milestones || [];
+    if (!milestones.length) {
+        milestonesEl.innerHTML = `<div style="color: #9ca3af; font-style: italic; text-align: center;">No lifecycle milestones detected yet.</div>`;
+    } else {
+        const list = document.createElement('div');
+        list.style.display = 'flex';
+        list.style.flexDirection = 'column';
+        list.style.gap = '6px';
+
+        milestones.forEach(m => {
+            const dt = new Date(m.timestamp);
+            const formattedDate = dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' + 
+                                  dt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.justifyContent = 'space-between';
+            row.style.alignItems = 'center';
+            row.style.fontSize = '10px';
+            row.innerHTML = `
+                <span style="font-weight: 600; color: #374151; display: flex; align-items: center; gap: 4px;">
+                    🟢 ${esc(m.label)}
+                </span>
+                <span style="color: #6b7280; font-size: 9px;">${formattedDate}</span>
+            `;
+            list.appendChild(row);
+        });
+        milestonesEl.appendChild(list);
     }
 }
 
@@ -693,12 +800,20 @@ async function runMockDemo() {
             { id: 'po_shipped',       label: 'Shipped' },
             { id: 'po_closed',        label: 'Delivered' },
         ],
+        junk: [
+            { id: 'junk_new',      label: 'New Junk' },
+            { id: 'junk_review',   label: 'Under Review' },
+            { id: 'junk_flagged',  label: 'Flagged' },
+            { id: 'junk_archived', label: 'Archived' },
+            { id: 'junk_deleted',  label: 'Deleted' },
+        ],
     };
     NEXT_STATUS = {
         enq_new: 'enq_quoting', enq_quoting: 'enq_quoted',
         enq_quoted: 'enq_followup', enq_followup: 'enq_converted',
         po_received: 'po_acknowledged', po_acknowledged: 'po_in_production',
         po_in_production: 'po_ready', po_ready: 'po_shipped', po_shipped: 'po_closed',
+        junk_new: 'junk_review', junk_review: 'junk_flagged', junk_flagged: 'junk_archived', junk_archived: 'junk_deleted',
     };
 
     // Simulate home data

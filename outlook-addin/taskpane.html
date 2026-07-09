@@ -141,6 +141,21 @@
                     <span class="cat-arrow">›</span>
                 </div>
 
+                <div class="cat-card" id="card-junk"
+                     onclick="navToCategory('junk')"
+                     aria-label="Junk Email">
+                    <div class="cat-icon jnk" style="background-color: #f3f4f6; color: #4b5563;">🗑️</div>
+                    <div class="cat-body">
+                        <div class="cat-name">Junk Email</div>
+                        <div class="cat-hint">Spam, newsletters &amp; marketing</div>
+                    </div>
+                    <div class="cat-right-meta">
+                        <div class="cat-count" id="cnt-junk">0</div>
+                        <div class="crit-pill" id="crit-junk"></div>
+                    </div>
+                    <span class="cat-arrow">›</span>
+                </div>
+
             </div><!-- /cat-grid -->
         </div><!-- /view-home -->
 
@@ -152,6 +167,19 @@
             <div class="list-header">
                 <span class="list-title" id="list-title">Emails</span>
                 <span class="list-count" id="list-count"></span>
+            </div>
+
+            <!-- Date range filter -->
+            <div class="date-filter-row" style="display: flex; gap: 8px; padding: 6px 16px 10px 16px; align-items: center; justify-content: space-between; border-bottom: 1px solid #f3f4f6; background-color: #fafafa;">
+                <div style="display: flex; flex-direction: column; flex: 1;">
+                    <label style="font-size: 9px; color: #4b5563; font-weight: 700; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px;">Start Date</label>
+                    <input type="datetime-local" id="filter-start" style="font-size: 11px; padding: 4px; border: 1px solid #d1d5db; border-radius: 4px; outline: none; background: #ffffff; width: 100%; color: #374151;" onchange="onDateFilterChange()" />
+                </div>
+                <div style="display: flex; flex-direction: column; flex: 1;">
+                    <label style="font-size: 9px; color: #4b5563; font-weight: 700; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px;">End Date</label>
+                    <input type="datetime-local" id="filter-end" style="font-size: 11px; padding: 4px; border: 1px solid #d1d5db; border-radius: 4px; outline: none; background: #ffffff; width: 100%; color: #374151;" onchange="onDateFilterChange()" />
+                </div>
+                <button onclick="clearDateFilters()" style="margin-top: 13px; font-size: 11px; padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 4px; background: #ffffff; cursor: pointer; color: #4b5563; height: 26px; display: flex; align-items: center; justify-content: center; font-weight: 500;">Reset</button>
             </div>
 
             <!-- Filter chips -->
@@ -238,7 +266,21 @@
                         <option value="invoice">Vendor Invoice</option>
                         <option value="shipping">Shipping &amp; Logistics</option>
                         <option value="general">General</option>
+                        <option value="junk">Junk Email</option>
                     </select>
+                </div>
+
+                <!-- Thread Lifecycle Tracker -->
+                <div class="stepper-card hidden" id="thread-lifecycle-card" style="margin-top: 12px; border-top: 1px solid #f3f4f6; padding-top: 12px; padding-bottom: 12px;">
+                    <div class="stepper-label" style="font-weight: 700; color: #1e3a8a; display: flex; align-items: center; gap: 4px; font-size: 11px;">
+                        <span>🧵 THREAD LIFECYCLE TRACKER</span>
+                    </div>
+                    <div class="stepper" id="thread-lifecycle-stepper" style="margin-top: 10px; display: flex; justify-content: space-between; position: relative;">
+                        <!-- Will be dynamically populated via JS -->
+                    </div>
+                    <div id="thread-lifecycle-milestones" style="margin-top: 10px; font-size: 10px; color: #4b5563; border-top: 1px dashed #e5e7eb; padding-top: 8px;">
+                        <!-- Chronicles list -->
+                    </div>
                 </div>
 
                 <!-- Tab bar -->
