@@ -33,7 +33,7 @@ engine = create_async_engine(
     echo=settings.DEBUG,          # Log SQL queries only in debug mode
     pool_pre_ping=True,           # Verify connections before use (handles Postgres restarts)
     connect_args={
-        "prepared_statement_cache_size": 0  # Required for Supabase PgBouncer (Transaction mode)
+        "statement_cache_size": 0  # Required for Supabase PgBouncer (Transaction mode)
     }
 )
 
