@@ -3,6 +3,7 @@ Async SQLAlchemy database engine and session factory.
 Uses asyncpg driver for PostgreSQL in production.
 """
 import logging
+import uuid
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -34,7 +35,8 @@ engine = create_async_engine(
     pool_pre_ping=True,           # Verify connections before use (handles Postgres restarts)
     connect_args={
         "prepared_statement_cache_size": 0,
-        "statement_cache_size": 0  # Required for Supabase PgBouncer (Transaction mode)
+        "statement_cache_size": 0,  # Required for Supabase PgBouncer (Transaction mode)
+        "prepared_statement_name_func": lambda: f"__asyncpg_{uuid.uuid4().hex}__"
     }
 )
 
