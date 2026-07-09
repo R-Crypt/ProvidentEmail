@@ -178,4 +178,5 @@ class HealthResponse(BaseModel):
     version: str
     environment: str
     db_connected: bool = False
+    bypass_auth_active: bool = False
     details: Dict[str, Any] = {}

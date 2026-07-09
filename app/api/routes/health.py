@@ -33,6 +33,7 @@ async def health() -> HealthResponse:
         status="ok",
         version=settings.APP_VERSION,
         environment=settings.ENVIRONMENT,
+        bypass_auth_active=settings.BYPASS_AUTH,
     )
 
 
@@ -64,6 +65,7 @@ async def ready() -> HealthResponse:
         version=settings.APP_VERSION,
         environment=settings.ENVIRONMENT,
         db_connected=db_ok,
+        bypass_auth_active=settings.BYPASS_AUTH,
         details=details,
     )
 
