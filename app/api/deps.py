@@ -8,6 +8,7 @@ from fastapi import Depends, Header, HTTPException, status
 from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.security import (
     decode_internal_token,
     extract_user_email_from_token,
@@ -41,6 +42,13 @@ async def get_current_user(
 
     Raises HTTP 401 if the token is missing or invalid.
     """
+    if settings.BYPASS_AUTH:
+        return CurrentUser(
+            email="rayaankhaaan@outlook.com",
+            tenant_id="00ae596d-5d33-44c2-8df8-2f1933056560",
+            display_name="Rayaan Khan",
+        )
+
     credentials_exc = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials. Please provide a valid Bearer token.",

@@ -1,18 +1,26 @@
 """
-Health check endpoints.
-Used by Docker healthcheck, load balancers, and uptime monitors.
+Health check and general API endpoints.
 """
 import logging
+from datetime import datetime, timezone
+from typing import Optional, Dict
 
-from fastapi import APIRouter
-from sqlalchemy import text
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import text, select
+from pydantic import BaseModel
 
 from app.core.config import settings
 from app.db.session import AsyncSessionLocal
+from app.api.deps import AuthUser, DbSession
+from app.models.domain import ProcessedEmail
 from app.models.schemas import HealthResponse
 
 logger = logging.getLogger(__name__)
-router = APIRouter(tags=["Health"])
+router = APIRouter(tags=["Health / General"])
+
+
+# Global in-memory auto-reply state
+AUTO_REPLY_ENABLED = False
 
 
 @router.get("/health", response_model=HealthResponse, summary="Liveness check")
@@ -32,8 +40,6 @@ async def health() -> HealthResponse:
 async def ready() -> HealthResponse:
     """
     Readiness probe — checks that the database is reachable.
-    Load balancers should use this endpoint to decide whether to send traffic.
-    Returns 503 if the DB is not reachable.
     """
     db_ok = False
     details: dict = {}
@@ -60,3 +66,63 @@ async def ready() -> HealthResponse:
         db_connected=db_ok,
         details=details,
     )
+
+
+# ---------------------------------------------------------------------------
+# General App Settings and Reply Endpoints
+# ---------------------------------------------------------------------------
+
+class SettingsRequest(BaseModel):
+    auto_reply: bool
+
+class SendReplyRequest(BaseModel):
+    message_id: str
+    reply_text: str
+
+
+@router.get("/api/settings", summary="Get global settings")
+async def get_settings_endpoint(
+    user: AuthUser,
+):
+    global AUTO_REPLY_ENABLED
+    return {"success": True, "auto_reply": AUTO_REPLY_ENABLED}
+
+
+@router.post("/api/settings", summary="Update global settings")
+async def post_settings_endpoint(
+    body: SettingsRequest,
+    user: AuthUser,
+):
+    global AUTO_REPLY_ENABLED
+    AUTO_REPLY_ENABLED = body.auto_reply
+    return {"success": True, "auto_reply": AUTO_REPLY_ENABLED}
+
+
+@router.post("/api/send_reply", summary="Record a sent reply and advance email status")
+async def send_reply_endpoint(
+    body: SendReplyRequest,
+    db: DbSession,
+    user: AuthUser,
+):
+    stmt = select(ProcessedEmail).where(ProcessedEmail.message_id == body.message_id)
+    result = await db.execute(stmt)
+    email = result.scalar_one_or_none()
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Email record not found.",
+        )
+
+    email.reply_sent = True
+    email.sent_reply = body.reply_text
+    email.reply_sent_at = datetime.now(timezone.utc)
+
+    # Advance status to the reply-triggered status
+    from src.database import REPLY_ADVANCE_STATUS
+    target_status = REPLY_ADVANCE_STATUS.get(email.category)
+    if target_status:
+        email.email_status = target_status
+        email.status_updated_at = datetime.now(timezone.utc)
+
+    await db.commit()
+    return {"success": True, "new_status": email.email_status or ""}

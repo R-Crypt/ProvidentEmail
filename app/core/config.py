@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = Field(default="CHANGE_ME_IN_PRODUCTION_32chars+", min_length=32)
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 8  # 8 hours
+    BYPASS_AUTH: bool = Field(default=False, description="Bypass Azure AD authentication for testing")
 
     # ------------------------------------------------------------------ #
     #  CORS — list of allowed origins (set to PUBLIC_URL in production)

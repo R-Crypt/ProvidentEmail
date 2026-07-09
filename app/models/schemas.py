@@ -111,6 +111,16 @@ class EmailRecord(BaseModel):
     received_at: Optional[datetime]
     extracted_data: Optional[str]
     response_draft: Optional[str]
+    conversation_id: Optional[str] = None
+    email_status: Optional[str] = None
+    status_updated_at: Optional[datetime] = None
+    estimated_value: Optional[float] = None
+    source_folder: Optional[str] = None
+    priority_score: Optional[float] = None
+    priority_tier: Optional[str] = None
+    reply_sent: bool = False
+    sent_reply: Optional[str] = None
+    reply_sent_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 

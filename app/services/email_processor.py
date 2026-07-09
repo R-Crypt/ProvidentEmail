@@ -47,6 +47,27 @@ async def classify_and_save(
     reason = result["reason"]
     outlook_cat = settings.CATEGORIES.get(category, {}).get("outlook_category", "General")
 
+    # Map category to initial status ID
+    initial_status_map = {
+        "purchase_order": "po_received",
+        "enquiry":        "enq_new",
+        "invoice":        "inv_new",
+        "shipping":       "ship_dispatched",
+        "general":        "gen_new",
+    }
+    initial_status = initial_status_map.get(category, "gen_new")
+
+    # Estimate priority
+    from src.priority import compute_priority_score
+    p_info = compute_priority_score({
+        "received_at": received_at or datetime.now(timezone.utc),
+        "estimated_value": result.get("estimated_value", 0.0),
+        "subject": subject,
+        "body_preview": body_preview[:1000] if body_preview else (body[:200] if body else ""),
+        "sender": sender,
+        "category": category,
+    })
+
     email_record = ProcessedEmail(
         message_id=message_id,
         user_email=user_email,
@@ -60,6 +81,15 @@ async def classify_and_save(
         received_at=received_at or datetime.now(timezone.utc),
         extracted_data=result.get("extracted_data"),
         response_draft=result.get("response_draft"),
+        # v2.1 fields
+        conversation_id=result.get("conversation_id") or "",
+        email_status=initial_status,
+        status_updated_at=datetime.now(timezone.utc),
+        estimated_value=result.get("estimated_value", 0.0),
+        source_folder="Inbox",
+        priority_score=p_info["score"],
+        priority_tier=p_info["tier"],
+        reply_sent=False,
     )
 
     db.add(email_record)

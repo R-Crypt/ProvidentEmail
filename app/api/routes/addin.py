@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import func, select
+from pydantic import BaseModel
 
 from app.api.deps import AuthUser, DbSession
 from app.models.domain import ClassificationStats, ProcessedEmail
@@ -249,3 +250,90 @@ async def addin_feedback(
             detail="Email record not found.",
         )
     return FeedbackResponse(success=True, message_id=body.message_id)
+
+
+# ---------------------------------------------------------------------------
+# POST /api/addin/update_status
+# ---------------------------------------------------------------------------
+
+class UpdateStatusRequest(BaseModel):
+    message_id: str
+    status: str
+
+@router.post(
+    "/update_status",
+    summary="Update the lifecycle status of an email",
+)
+async def addin_update_status(
+    body: UpdateStatusRequest,
+    db: DbSession,
+    user: AuthUser,
+):
+    stmt = select(ProcessedEmail).where(ProcessedEmail.message_id == body.message_id)
+    result = await db.execute(stmt)
+    email = result.scalar_one_or_none()
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Email record not found.",
+        )
+
+    email.email_status = body.status
+    email.status_updated_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"success": True}
+
+
+# ---------------------------------------------------------------------------
+# GET /api/addin/status_flows
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/status_flows",
+    summary="Get status flows for the frontend stepper",
+)
+async def addin_status_flows(
+    user: AuthUser,
+):
+    from src.database import STATUS_FLOWS, NEXT_STATUS
+    return {"success": True, "flows": STATUS_FLOWS, "next_status": NEXT_STATUS}
+
+
+# ---------------------------------------------------------------------------
+# GET /api/addin/stale_alerts
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/stale_alerts",
+    summary="Get emails requiring attention",
+)
+async def addin_stale_alerts(
+    db: DbSession,
+    user: AuthUser,
+    hours: int = 24,
+):
+    from datetime import timedelta
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+
+    stmt = (
+        select(ProcessedEmail)
+        .where(
+            ProcessedEmail.user_email == user.email,
+            ProcessedEmail.status_updated_at < cutoff,
+            ProcessedEmail.email_status.notin_([
+                "po_closed", "po_cancelled",
+                "enq_converted", "enq_lost",
+                "inv_paid", "inv_disputed",
+                "ship_delivered",
+                "gen_read"
+            ])
+        )
+    )
+    result = await db.execute(stmt)
+    stale_emails = result.scalars().all()
+
+    return {
+        "success": True,
+        "stale_count": len(stale_emails),
+        "stale": [EmailRecord.model_validate(e) for e in stale_emails]
+    }

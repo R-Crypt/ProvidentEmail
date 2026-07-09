@@ -68,6 +68,18 @@ class ProcessedEmail(Base):
     extracted_data: Mapped[Optional[str]] = mapped_column(Text)
     response_draft: Mapped[Optional[str]] = mapped_column(Text)
 
+    # v2.1 fields
+    conversation_id: Mapped[Optional[str]] = mapped_column(String(255), index=True)
+    email_status: Mapped[Optional[str]] = mapped_column(String(50), default=None)
+    status_updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=None)
+    estimated_value: Mapped[Optional[float]] = mapped_column(Float, default=None)
+    source_folder: Mapped[Optional[str]] = mapped_column(String(100), default="Inbox")
+    priority_score: Mapped[Optional[float]] = mapped_column(Float, default=None)
+    priority_tier: Mapped[Optional[str]] = mapped_column(String(10), default=None)
+    reply_sent: Mapped[bool] = mapped_column(Boolean, default=False)
+    sent_reply: Mapped[Optional[str]] = mapped_column(Text, default=None)
+    reply_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=None)
+
 
 class ClassificationStats(Base):
     """Daily rollup statistics per user per category for reporting."""
