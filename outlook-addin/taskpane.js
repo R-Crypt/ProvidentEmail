@@ -16,7 +16,7 @@ async function getAuthToken() {
         }
         try {
             Office.auth.getAccessTokenAsync({ allowSignInPrompt: true }, (result) => {
-                if (result.status === Office.MailboxEnums.AsyncResultStatus.Succeeded || result.status === 'succeeded') {
+                if (result.status === "succeeded" || (Office?.MailboxEnums?.AsyncResultStatus && result.status === Office.MailboxEnums.AsyncResultStatus.Succeeded)) {
                     _authToken = result.value;
                     resolve(_authToken);
                 } else {
@@ -332,8 +332,8 @@ function loadCurrentOutlookEmail() {
     const convId  = item.conversationId || null;
 
     if (item.body) {
-        item.body.getAsync(Office.CoercionType.Text, (result) => {
-            const bodyText = (result.status === Office.MailboxEnums.AsyncResultStatus.Succeeded) ? result.value : '';
+        item.body.getAsync("text", (result) => {
+            const bodyText = (result.status === "succeeded" || (Office?.MailboxEnums?.AsyncResultStatus && result.status === Office.MailboxEnums.AsyncResultStatus.Succeeded)) ? result.value : '';
             classifyAndShow(_currentMsgId, subject, bodyText, sender, convId, 'Inbox');
         });
     } else {
@@ -691,7 +691,7 @@ function applyOutlookCategory(cat) {
     const catInfo = CAT[cat];
     if (!catInfo) return;
     item.categories.getAsync(r => {
-        if (r.status === Office.MailboxEnums.AsyncResultStatus.Succeeded) {
+        if (r.status === "succeeded" || (Office?.MailboxEnums?.AsyncResultStatus && r.status === Office.MailboxEnums.AsyncResultStatus.Succeeded)) {
             const cur = r.value || [];
             Object.values(CAT).forEach(c => { if (c.name !== catInfo.name && cur.includes(c.name)) item.categories.removeAsync([c.name]); });
             if (!cur.includes(catInfo.name)) item.categories.addAsync([catInfo.name]);
@@ -782,7 +782,25 @@ function setupListeners() {
 }
 
 // ─── Utility ───────────────────────────────────────────────────────────────────
-const el = id => document.getElementById(id);
+const el = id => {
+    const element = document.getElementById(id);
+    if (element) return element;
+    return {
+        style: {},
+        classList: {
+            add: () => {},
+            remove: () => {},
+            toggle: () => {},
+            contains: () => false
+        },
+        setAttribute: () => {},
+        getAttribute: () => null,
+        addEventListener: () => {},
+        appendChild: () => {},
+        innerHTML: "",
+        textContent: ""
+    };
+};
 
 function esc(str) {
     return String(str)
