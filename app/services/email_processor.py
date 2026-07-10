@@ -141,8 +141,12 @@ async def get_or_classify(
             existing.reason.startswith("Keyword match:") or
             existing.reason == "No matching keywords found"
         )
-        if is_fallback and classifier._client is not None:
-            logger.info("Upgrading keyword-fallback email with AI classification", extra={"message_id": message_id})
+        has_new_body = (
+            len(body.strip()) > 10 and 
+            (not existing.body_preview or len(existing.body_preview.strip()) <= 5)
+        )
+        if (is_fallback or has_new_body) and classifier._client is not None:
+            logger.info("Upgrading cached email classification with new/AI content", extra={"message_id": message_id})
             await db.delete(existing)
             await db.flush()
             existing = None

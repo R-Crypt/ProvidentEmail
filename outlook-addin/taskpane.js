@@ -86,9 +86,23 @@ Office.onReady(async (info) => {
 });
 
 async function boot() {
+    updateGreeting();
     await loadStatusFlows();
     await refreshHome();
     await loadAddInAutoReplySetting();
+}
+
+function updateGreeting() {
+    const greetingEl = el('greeting-title');
+    if (!greetingEl) return;
+    const hour = new Date().getHours();
+    let greeting = "Good morning ☀️";
+    if (hour >= 12 && hour < 17) {
+        greeting = "Good afternoon 🌤️";
+    } else if (hour >= 17 || hour < 4) {
+        greeting = "Good evening 🌙";
+    }
+    greetingEl.textContent = greeting;
 }
 
 // ─── Navigation ────────────────────────────────────────────────────────────────
@@ -317,7 +331,14 @@ function loadCurrentOutlookEmail() {
     const sender  = item.from?.emailAddress || '';
     const convId  = item.conversationId || null;
 
-    setTimeout(() => classifyAndShow(_currentMsgId, subject, '', sender, convId, 'Inbox'), 80);
+    if (item.body) {
+        item.body.getAsync(Office.CoercionType.Text, (result) => {
+            const bodyText = (result.status === Office.MailboxEnums.AsyncResultStatus.Succeeded) ? result.value : '';
+            classifyAndShow(_currentMsgId, subject, bodyText, sender, convId, 'Inbox');
+        });
+    } else {
+        classifyAndShow(_currentMsgId, subject, '', sender, convId, 'Inbox');
+    }
 }
 
 async function classifyAndShow(msgId, subject, body, sender, convId, folder) {
@@ -364,7 +385,9 @@ function renderDetail(data) {
     el('class-icon').textContent    = catI.icon;
     el('class-name').textContent    = catI.name;
     el('class-reason').textContent  = data.reason || 'AI classified';
-    el('class-conf').textContent    = data.confidence ? `${data.confidence}% conf.` : '—';
+    el('class-conf').style.display  = 'none';
+    const cl = document.querySelector('.class-label');
+    if (cl) cl.style.display = 'none';
 
     // ── Priority row
     const tier = data.priority_tier || 'low';
@@ -372,9 +395,8 @@ function renderDetail(data) {
     if (data.priority_score != null) {
         pRow.className = `priority-row ${tier}`;
         el('pr-badge').textContent   = PRIORITY_LABEL[tier] || tier;
-        el('pr-score').textContent   = `${Math.round(data.priority_score)}/100`;
-        const reasons = data.priority_reasons || [];
-        el('pr-reasons').textContent = reasons.length ? reasons.join(' · ') : 'Scored at classification';
+        el('pr-score').style.display  = 'none';
+        el('pr-reasons').style.display = 'none';
         pRow.classList.remove('hidden');
     } else {
         pRow.classList.add('hidden');

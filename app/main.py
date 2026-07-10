@@ -97,6 +97,18 @@ def create_app() -> FastAPI:
     )
 
     # ------------------------------------------------------------------
+    # Cache-Control middleware to prevent browser caching of add-in files
+    # ------------------------------------------------------------------
+    @app.middleware("http")
+    async def add_no_cache_headers(request: Request, call_next):
+        response = await call_next(request)
+        if request.url.path.startswith("/addin") or request.url.path.endswith(".xml"):
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        return response
+
+    # ------------------------------------------------------------------
     # Global exception handlers
     # ------------------------------------------------------------------
 
