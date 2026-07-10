@@ -97,6 +97,52 @@ async def addin_classify(
 
 
 # ---------------------------------------------------------------------------
+# GET /api/addin/email_detail
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/email_detail",
+    response_model=ClassifyResponse,
+    summary="Get full details for a processed email, including thread lifecycle",
+)
+async def addin_email_detail(
+    message_id: str,
+    db: DbSession,
+    user: AuthUser,
+) -> ClassifyResponse:
+    """Retrieve full details of an email by message_id, including its thread lifecycle status."""
+    stmt = select(ProcessedEmail).where(
+        ProcessedEmail.message_id == message_id,
+        ProcessedEmail.user_email == user.email,
+    )
+    result = await db.execute(stmt)
+    existing = result.scalar_one_or_none()
+    if not existing:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Email record not found.",
+        )
+
+    # Resolve thread lifecycle
+    lifecycle_info = None
+    if existing.conversation_id:
+        from app.services.email_processor import get_thread_lifecycle_status
+        lifecycle_info = await get_thread_lifecycle_status(db, existing.conversation_id)
+
+    return ClassifyResponse(
+        message_id=existing.message_id,
+        category=existing.category,
+        confidence=existing.confidence,
+        reason=existing.reason,
+        extracted_data=existing.extracted_data,
+        response_draft=existing.response_draft,
+        processed_at=existing.processed_at,
+        from_cache=True,
+        thread_lifecycle=lifecycle_info,
+    )
+
+
+# ---------------------------------------------------------------------------
 # POST /api/addin/reclassify
 # ---------------------------------------------------------------------------
 

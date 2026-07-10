@@ -309,12 +309,22 @@ function renderListEmpty(msg) {
 }
 
 // ─── Email Detail View ─────────────────────────────────────────────────────────
-function openEmailDetail(emailData) {
-    _currentEmail = emailData;
+async function openEmailDetail(emailData) {
+    _currentEmail = null;
     _currentMsgId = emailData.message_id;
+    _currentCat   = null;
     navTo('detail');
-    setDetailLoading(false);
-    renderDetail(emailData);
+    setDetailLoading(true);
+    try {
+        const res = await apiFetch(`${API_HOST}/api/addin/email_detail?message_id=${encodeURIComponent(emailData.message_id)}`);
+        if (!res?.ok) throw new Error(`HTTP ${res?.status}`);
+        const d = await res.json();
+        _currentEmail = d.data || d;
+        setDetailLoading(false);
+        renderDetail(_currentEmail);
+    } catch (e) {
+        setDetailError('Cannot load email details: ' + e.message);
+    }
 }
 
 function loadCurrentOutlookEmail() {
