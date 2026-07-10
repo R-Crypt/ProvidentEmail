@@ -170,7 +170,6 @@
         </bt:LongStrings>
       </Resources>
 
-    </VersionOverrides>
     <WebApplicationInfo>
       <Id>00ae596d-5d33-44c2-8df8-2f1933056560</Id>
       <Resource>api://providentemail.onrender.com/00ae596d-5d33-44c2-8df8-2f1933056560</Resource>
@@ -180,5 +179,6 @@
         <Scope>User.Read</Scope>
       </Scopes>
     </WebApplicationInfo>
+    </VersionOverrides>
   </VersionOverrides>
 </OfficeApp>
