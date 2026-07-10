@@ -322,6 +322,9 @@ function loadCurrentOutlookEmail() {
 
 async function classifyAndShow(msgId, subject, body, sender, convId, folder) {
     try {
+        if (!STATUS_FLOWS || !Object.keys(STATUS_FLOWS).length) {
+            await loadStatusFlows();
+        }
         const res = await apiFetch(`${API_HOST}/api/addin/classify`, {
             method: 'POST',
             body: JSON.stringify({ message_id: msgId, subject, body, sender, conversation_id: convId, source_folder: folder })

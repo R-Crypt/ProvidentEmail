@@ -135,6 +135,18 @@ async def get_or_classify(
     result = await db.execute(stmt)
     existing = result.scalar_one_or_none()
 
+    classifier = get_classifier()
+    if existing:
+        is_fallback = (
+            existing.reason.startswith("Keyword match:") or
+            existing.reason == "No matching keywords found"
+        )
+        if is_fallback and classifier._client is not None:
+            logger.info("Upgrading keyword-fallback email with AI classification", extra={"message_id": message_id})
+            await db.delete(existing)
+            await db.flush()
+            existing = None
+
     if existing:
         logger.debug("Email found in cache", extra={"message_id": message_id})
         return {

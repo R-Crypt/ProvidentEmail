@@ -173,28 +173,44 @@ async def addin_triage_summary(
         hour=0, minute=0, second=0, microsecond=0
     )
 
-    stmt = (
-        select(ProcessedEmail.category, func.count(ProcessedEmail.id))
+    # 1. Total processed today
+    total_stmt = (
+        select(func.count(ProcessedEmail.id))
         .where(
             ProcessedEmail.processed_at >= today_start,
             ProcessedEmail.user_email == user.email,
         )
+    )
+    total_today = await db.scalar(total_stmt) or 0
+
+    # 2. Counts of unresolved emails grouped by category
+    TERMINAL_STATUSES = {
+        "po_closed", "po_cancelled",
+        "enq_converted", "enq_lost",
+        "inv_paid", "inv_disputed",
+        "ship_delivered", "ship_delayed",
+        "gen_read", "junk_deleted"
+    }
+
+    counts_stmt = (
+        select(ProcessedEmail.category, func.count(ProcessedEmail.id))
+        .where(
+            ProcessedEmail.user_email == user.email,
+            ProcessedEmail.email_status.notin_(TERMINAL_STATUSES)
+        )
         .group_by(ProcessedEmail.category)
     )
-    result = await db.execute(stmt)
+    result = await db.execute(counts_stmt)
     rows = result.all()
 
     counts = CategoryCounts()
-    total = 0
     for cat, count in rows:
         if hasattr(counts, cat):
             setattr(counts, cat, count)
-            total += count
         else:
             counts.general += count
-            total += count
 
-    return TriageSummaryResponse(total=total, counts=counts)
+    return TriageSummaryResponse(total=total_today, counts=counts)
 
 
 # ---------------------------------------------------------------------------
