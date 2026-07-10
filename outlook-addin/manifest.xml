@@ -95,8 +95,8 @@
         <bt:Image id="icon80" DefaultValue="https://providentemail.onrender.com/addin/assets/logo.jpg" />
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="functionFileUrl" DefaultValue="https://providentemail.onrender.com/addin/functionfile.html" />
-        <bt:Url id="taskpaneUrl" DefaultValue="https://providentemail.onrender.com/addin/taskpane.html" />
+        <bt:Url id="functionFileUrl" DefaultValue="https://providentemail.onrender.com/addin/functionfile.html?v=2.2.2" />
+        <bt:Url id="taskpaneUrl" DefaultValue="https://providentemail.onrender.com/addin/taskpane.html?v=2.2.2" />
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="groupLabel" DefaultValue="Provident" />
@@ -157,8 +157,8 @@
           <bt:Image id="icon80" DefaultValue="https://providentemail.onrender.com/addin/assets/logo.jpg" />
         </bt:Images>
         <bt:Urls>
-          <bt:Url id="functionFileUrl" DefaultValue="https://providentemail.onrender.com/addin/functionfile.html" />
-          <bt:Url id="taskpaneUrl" DefaultValue="https://providentemail.onrender.com/addin/taskpane.html" />
+          <bt:Url id="functionFileUrl" DefaultValue="https://providentemail.onrender.com/addin/functionfile.html?v=2.2.2" />
+          <bt:Url id="taskpaneUrl" DefaultValue="https://providentemail.onrender.com/addin/taskpane.html?v=2.2.2" />
         </bt:Urls>
         <bt:ShortStrings>
           <bt:String id="groupLabel" DefaultValue="Provident" />
