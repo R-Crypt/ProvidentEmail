@@ -7,7 +7,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional, List
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Header, HTTPException, status
 from sqlalchemy import func, select
 from pydantic import BaseModel
 
@@ -456,13 +456,12 @@ class SyncResponse(BaseModel):
 async def addin_sync(
     db: DbSession,
     user: AuthUser,
-    authorization: Optional[str] = None,
+    authorization: Optional[str] = Header(None),
 ) -> SyncResponse:
     """
     Fetch recent emails from the authenticated user's mailbox using their delegated M365 token,
     classify any new emails, and persist them.
     """
-    from fastapi import Header
     import httpx
 
     # Authorization header is injected via AuthUser dependency check, but we extract the raw token here

@@ -2,8 +2,13 @@
 Provident Operations Copilot — FastAPI Application Factory
 """
 import logging
+import os
+import sys
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
+
+# Add src/ to sys.path to allow legacy modules to import from config/etc.
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
 
 import sentry_sdk
 from fastapi import FastAPI, Request, status
