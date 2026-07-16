@@ -107,6 +107,31 @@ async def verify_ms_token(token: str) -> Dict[str, Any]:
         logger.warning("Microsoft token expired")
         raise JWTError("Token expired")
     except JWTError as exc:
+        logger.info("Local Microsoft token validation failed (JWTError), attempting Graph API validation fallback...")
+        # Fallback: check if this is a delegated Graph API Access Token (e.g. from Supabase OAuth)
+        # by calling the Graph /me endpoint using the token.
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.get(
+                    "https://graph.microsoft.com/v1.0/me",
+                    headers={"Authorization": f"Bearer {token}"}
+                )
+                if resp.status_code == 200:
+                    me_data = resp.json()
+                    logger.info("Token validated successfully via Graph API /me fallback")
+                    return {
+                        "preferred_username": me_data.get("mail") or me_data.get("userPrincipalName"),
+                        "name": me_data.get("displayName"),
+                        "tid": "",
+                    }
+                else:
+                    logger.warning(
+                        "Graph API fallback validation failed",
+                        extra={"status": resp.status_code, "body": resp.text[:200]},
+                    )
+        except Exception as e:
+            logger.warning(f"Graph API fallback validation error: {e}")
+        
         logger.warning("Microsoft token validation failed", extra={"error": str(exc)})
         raise
 
