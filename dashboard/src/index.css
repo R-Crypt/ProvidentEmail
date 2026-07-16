@@ -16,22 +16,21 @@
 
 body {
   margin: 0;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  padding: 0;
+  background-color: #f9fafb;
+  color: #374151;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
 }
 
 #root {
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
+  height: 100%;
+  margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
