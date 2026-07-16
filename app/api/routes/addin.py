@@ -436,3 +436,137 @@ async def addin_stale_alerts(
         "stale_count": len(stale_emails),
         "stale": [EmailRecord.model_validate(e) for e in stale_emails]
     }
+
+
+# ---------------------------------------------------------------------------
+# POST /api/addin/sync
+# ---------------------------------------------------------------------------
+
+class SyncResponse(BaseModel):
+    success: bool
+    processed_count: int
+    skipped_count: int
+    failed_count: int
+
+@router.post(
+    "/sync",
+    response_model=SyncResponse,
+    summary="Fetch and process recent emails using user's delegated token",
+)
+async def addin_sync(
+    db: DbSession,
+    user: AuthUser,
+    authorization: Optional[str] = None,
+) -> SyncResponse:
+    """
+    Fetch recent emails from the authenticated user's mailbox using their delegated M365 token,
+    classify any new emails, and persist them.
+    """
+    from fastapi import Header
+    import httpx
+
+    # Authorization header is injected via AuthUser dependency check, but we extract the raw token here
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or invalid Authorization header. Expected 'Bearer <microsoft_access_token>'.",
+        )
+
+    token = authorization.removeprefix("Bearer ").strip()
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+
+    processed_count = 0
+    skipped_count = 0
+    failed_count = 0
+
+    from app.services.email_processor import classify_and_save
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        try:
+            # Fetch last 20 emails
+            url = "https://graph.microsoft.com/v1.0/me/messages?$top=20&$select=id,subject,body,bodyPreview,from,receivedDateTime,conversationId"
+            resp = await client.get(url, headers=headers)
+            
+            if resp.status_code != 200:
+                logger.error(f"Graph API sync fetch failed: {resp.status_code} - {resp.text}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Failed to fetch emails from Microsoft Graph: {resp.text[:200]}"
+                )
+
+            messages = resp.json().get("value", [])
+
+            for msg in messages:
+                msg_id = msg.get("id")
+                if not msg_id:
+                    continue
+
+                # Check if already processed
+                check_stmt = select(ProcessedEmail).where(ProcessedEmail.message_id == msg_id)
+                res = await db.execute(check_stmt)
+                exists = res.scalar_one_or_none()
+                if exists:
+                    skipped_count += 1
+                    continue
+
+                try:
+                    subject = msg.get("subject") or "(No Subject)"
+                    body_content = msg.get("body", {}).get("content") or ""
+                    body_preview = msg.get("bodyPreview") or ""
+                    
+                    from_info = msg.get("from", {}).get("emailAddress", {})
+                    sender_name = from_info.get("name", "")
+                    sender_address = from_info.get("address", "")
+                    
+                    if sender_name and sender_address:
+                        sender = f"{sender_name} <{sender_address}>"
+                    else:
+                        sender = sender_address or sender_name or "Unknown Sender <unknown@unknown.com>"
+
+                    received_str = msg.get("receivedDateTime")
+                    received_at = None
+                    if received_str:
+                        try:
+                            # Parse UTC datetime from Graph (e.g. 2026-07-16T13:50:00Z)
+                            received_at = datetime.fromisoformat(received_str.replace("Z", "+00:00"))
+                        except Exception:
+                            pass
+
+                    # Run AI classification & save to DB
+                    await classify_and_save(
+                        db=db,
+                        message_id=msg_id,
+                        subject=subject,
+                        body=body_content,
+                        sender=sender,
+                        user_email=user.email,
+                        received_at=received_at,
+                        body_preview=body_preview,
+                        conversation_id=msg.get("conversationId"),
+                    )
+                    processed_count += 1
+
+                except Exception as e:
+                    logger.error(f"Failed to process email {msg_id} during sync: {e}", exc_info=True)
+                    failed_count += 1
+
+            await db.commit()
+            return SyncResponse(
+                success=True,
+                processed_count=processed_count,
+                skipped_count=skipped_count,
+                failed_count=failed_count,
+            )
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Addin sync error: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Sync failed: {e}",
+            )

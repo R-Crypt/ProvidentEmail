@@ -68,9 +68,42 @@ function App() {
   // Feedback State
   const [feedbackSuccess, setFeedbackSuccess] = useState(null); // 'thumb_up' or 'thumb_down'
 
+  // Mobile Navigation & Sync States
+  const [activeMobilePane, setActiveMobilePane] = useState('sidebar');
+  const [syncing, setSyncing] = useState(false);
+
   // Toast State
   const [toast, setToast] = useState(null);
   const toastTimeoutRef = useRef(null);
+
+  // Sync Mailbox on demand using delegated M365 token
+  const handleSyncMailbox = async () => {
+    setSyncing(true);
+    try {
+      const res = await apiFetch('/api/addin/sync', { method: 'POST' });
+      if (res.success) {
+        showToast(
+          `Sync complete! Processed ${res.processed_count} new emails (skipped ${res.skipped_count}, failed ${res.failed_count}).`,
+          'success'
+        );
+
+        // Refresh triage summary counts
+        const summary = await apiFetch('/api/addin/triage_summary');
+        setTriageSummary(summary);
+
+        // Refresh active emails list
+        let path = `/api/addin/category_emails?category=${selectedCategory}&limit=50`;
+        if (startDate) path += `&start_date=${new Date(startDate).toISOString()}`;
+        if (endDate) path += `&end_date=${new Date(endDate).toISOString()}`;
+        const data = await apiFetch(path);
+        setEmails(data.emails || []);
+      }
+    } catch (err) {
+      showToast(`Sync failed: ${err.message}`, 'error');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   // Monitor auth status on load
   useEffect(() => {
@@ -491,11 +524,11 @@ function App() {
 
       {/* Authenticated Workspace */}
       {session && (
-        <div className="workspace-container">
+        <div className={`workspace-container mobile-active-${activeMobilePane}`}>
           {/* ══════════════════════════════════════════════════
                LEFT PANE: SIDEBAR NAVIGATION
           ══════════════════════════════════════════════════ */}
-          <aside className="sidebar">
+          <aside className={`sidebar ${activeMobilePane === 'sidebar' ? 'mobile-show' : 'mobile-hide'}`}>
             <div className="sidebar-header">
               <div className="logo-area">
                 <img src="/logo.jpg" alt="Provident Logo" className="app-logo" />
@@ -528,6 +561,7 @@ function App() {
                       onClick={() => {
                         setSelectedCategory(key);
                         setSelectedEmail(null);
+                        setActiveMobilePane('list');
                       }}
                       className={`cat-item ${isActive ? 'active' : ''}`}
                     >
@@ -544,7 +578,16 @@ function App() {
 
               {/* Stale email alerts section */}
               {staleAlerts.stale_count > 0 && (
-                <div className="stale-alert-box animate-pulse">
+                <div
+                  className="stale-alert-box animate-pulse"
+                  onClick={() => {
+                    if (staleAlerts.stale[0]?.category) {
+                      setSelectedCategory(staleAlerts.stale[0].category);
+                    }
+                    setActiveMobilePane('list');
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
                   <div className="stale-alert-icon">⚠️</div>
                   <div className="stale-alert-body">
                     <strong>{staleAlerts.stale_count} email(s) need attention</strong>
@@ -571,11 +614,27 @@ function App() {
           {/* ══════════════════════════════════════════════════
                MIDDLE PANE: EMAIL LIST
           ══════════════════════════════════════════════════ */}
-          <section className="inbox-pane">
+          <section className={`inbox-pane ${activeMobilePane === 'list' ? 'mobile-show' : 'mobile-hide'}`}>
             <div className="inbox-header">
+              <div className="mobile-nav-row">
+                <button className="mobile-back-btn" onClick={() => setActiveMobilePane('sidebar')}>
+                  ← Categories
+                </button>
+              </div>
+
               <div className="inbox-title-row">
-                <h2>{CATEGORIES[selectedCategory]?.name || 'Inbox'}</h2>
-                <span className="inbox-total-count">{filteredEmails.length} messages</span>
+                <div className="inbox-title-left">
+                  <h2>{CATEGORIES[selectedCategory]?.name || 'Inbox'}</h2>
+                  <span className="inbox-total-count">{filteredEmails.length} messages</span>
+                </div>
+                <button
+                  className="btn-sync-inbox"
+                  onClick={handleSyncMailbox}
+                  disabled={syncing}
+                  title="Fetch and classify new emails from M365 Mailbox"
+                >
+                  {syncing ? '🔄 Syncing...' : '🔄 Sync Inbox'}
+                </button>
               </div>
 
               {/* Advanced date and range filtering */}
@@ -635,7 +694,10 @@ function App() {
                   return (
                     <button
                       key={em.message_id}
-                      onClick={() => setSelectedEmail(em)}
+                      onClick={() => {
+                        setSelectedEmail(em);
+                        setActiveMobilePane('detail');
+                      }}
                       className={`email-row-card ${isSelected ? 'selected' : ''} ${em.reply_sent ? 'replied' : ''}`}
                     >
                       <div className="email-row-top">
@@ -668,7 +730,13 @@ function App() {
           {/* ══════════════════════════════════════════════════
                RIGHT PANE: DETAIL COPILOT WORKSPACE
           ══════════════════════════════════════════════════ */}
-          <section className="detail-pane">
+          <section className={`detail-pane ${activeMobilePane === 'detail' ? 'mobile-show' : 'mobile-hide'}`}>
+            <div className="detail-mobile-header">
+              <button className="mobile-back-btn" onClick={() => setActiveMobilePane('list')}>
+                ← Inbox
+              </button>
+            </div>
+
             {/* Empty view state */}
             {!selectedEmail && (
               <div className="empty-detail-state">
