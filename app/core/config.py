@@ -54,6 +54,7 @@ class Settings(BaseSettings):
             "http://localhost:5176",
             "http://localhost:5177",
             "http://localhost:3000",
+            "https://provident-email-two.vercel.app",
         ]
     )
 
