@@ -2,10 +2,21 @@ import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import './App.css';
 
-// Retrieve config from environment variables
+// Retrieve config from environment variables with dynamic fallback
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8002';
+
+const getApiUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  // Auto-detect production vs development environment
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:8002';
+  }
+  return 'https://providentemail.onrender.com';
+};
+const apiUrl = getApiUrl();
 
 const isConfigured =
   supabaseUrl &&
