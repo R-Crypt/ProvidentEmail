@@ -1,0 +1,41 @@
+:root {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --bg-primary: #0b0c10;
+  --bg-secondary: #13151b;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.16);
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --accent-color: #0078d4; /* Microsoft Blue */
+  --accent-glow: rgba(0, 120, 212, 0.25);
+  --success-color: #107c41; /* Microsoft Excel Green */
+  --success-glow: rgba(16, 124, 65, 0.2);
+  --error-color: #a80000;
+  --error-glow: rgba(168, 0, 0, 0.2);
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+* {
+  box-sizing: border-box;
+}

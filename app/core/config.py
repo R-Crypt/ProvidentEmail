@@ -45,7 +45,16 @@ class Settings(BaseSettings):
     #  CORS — list of allowed origins (set to PUBLIC_URL in production)
     # ------------------------------------------------------------------ #
     ALLOWED_ORIGINS: List[str] = Field(
-        default=["https://localhost:7071", "https://localhost:3000"]
+        default=[
+            "https://localhost:7071",
+            "https://localhost:3000",
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://localhost:5175",
+            "http://localhost:5176",
+            "http://localhost:5177",
+            "http://localhost:3000",
+        ]
     )
 
     # ------------------------------------------------------------------ #

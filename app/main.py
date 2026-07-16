@@ -142,10 +142,12 @@ def create_app() -> FastAPI:
     from app.api.routes.health import router as health_router
     from app.api.routes.addin import router as addin_router
     from app.api.routes.dashboard import router as dashboard_router
+    from app.api.routes.test_mail import router as test_mail_router
 
     app.include_router(health_router)
     app.include_router(addin_router)
     app.include_router(dashboard_router)
+    app.include_router(test_mail_router)
 
     # ------------------------------------------------------------------
     # Static files — serves the Outlook Add-in task pane HTML/CSS/JS
