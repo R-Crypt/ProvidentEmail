@@ -81,13 +81,20 @@ function App() {
         setAuthError(error.message);
       } else {
         setSession(session);
+        if (session?.provider_token) {
+          localStorage.setItem('m365_provider_token', session.provider_token);
+        }
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session?.provider_token) {
+        localStorage.setItem('m365_provider_token', session.provider_token);
+      }
       if (!session) {
         // Reset states on logout
+        localStorage.removeItem('m365_provider_token');
         setTriageSummary({ total: 0, counts: {} });
         setStaleAlerts({ stale_count: 0, stale: [] });
         setEmails([]);
@@ -112,16 +119,21 @@ function App() {
 
   // Authenticate helper for API calls
   const apiFetch = async (path, options = {}) => {
-    if (!session?.provider_token) {
+    const token = session?.provider_token || localStorage.getItem('m365_provider_token');
+    if (!token) {
       throw new Error('Access token is missing. Please log in again.');
     }
     const headers = {
-      'Authorization': `Bearer ${session.provider_token}`,
+      'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
       ...(options.headers || {}),
     };
     const response = await fetch(`${apiUrl}${path}`, { ...options, headers });
     if (!response.ok) {
+      if (response.status === 401) {
+        // Clear stored token on 401 unauthorized to force re-auth
+        localStorage.removeItem('m365_provider_token');
+      }
       const msg = await response.text();
       throw new Error(msg || `Request failed with status ${response.status}`);
     }
